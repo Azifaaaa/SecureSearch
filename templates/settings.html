@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Settings — SecureSearch Cloud{% endblock %}
+{% block page_title %}Settings & Key Configuration{% endblock %}
+
+{% block content %}
+<div class="alert alert-warning mb-24">
+  ⚠ Cryptographic keys are managed via environment variables and the .env file. They are NEVER shown in this interface and are NEVER stored in the database.
+</div>
+
+<div class="card mb-24">
+  <div class="card-header"><div class="card-title">🔑 Key Setup Guide</div></div>
+  <div class="card-body">
+    <ol class="workflow-steps">
+      <li>Generate keys: <span class="mono">python scripts/generate_keys.py</span></li>
+      <li>Copy the output lines into your <span class="mono">.env</span> file</li>
+      <li>Restart the Flask application</li>
+      <li>Keys are loaded once at startup from environment variables</li>
+      <li>NEVER commit <span class="mono">.env</span> to Git</li>
+      <li>Back up your keys in a secure password manager or encrypted file</li>
+    </ol>
+    <div class="alert alert-error" style="margin-top:16px">
+      ⚠ If you lose your ENCRYPTION_KEY, all stored records become permanently unreadable. If you lose your SEARCH_KEY, the entire search index becomes invalid.
+    </div>
+  </div>
+</div>
+
+<div class="card mb-24">
+  <div class="card-header"><div class="card-title">🌍 Environment Variables</div></div>
+  <div class="card-body">
+    <table>
+      <thead><tr><th>Variable</th><th>Purpose</th><th>Required</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">FLASK_SECRET_KEY</td><td>Flask session signing</td><td><span class="badge badge-critical">Yes</span></td></tr>
+        <tr><td class="mono">ENCRYPTION_KEY_B64</td><td>AES-256-GCM encryption/decryption</td><td><span class="badge badge-critical">Yes</span></td></tr>
+        <tr><td class="mono">SEARCH_KEY_B64</td><td>HMAC search token generation</td><td><span class="badge badge-critical">Yes</span></td></tr>
+        <tr><td class="mono">INTEGRITY_KEY_B64</td><td>HMAC integrity verification</td><td><span class="badge badge-critical">Yes</span></td></tr>
+        <tr><td class="mono">STORAGE_MODE</td><td>local or cloud</td><td><span class="badge badge-warning">Yes</span></td></tr>
+        <tr><td class="mono">DATABASE_URL</td><td>SQLite or PostgreSQL URL</td><td><span class="badge badge-normal">Optional</span></td></tr>
+        <tr><td class="mono">SUPABASE_URL</td><td>Supabase project URL</td><td><span class="badge badge-normal">Cloud only</span></td></tr>
+        <tr><td class="mono">SUPABASE_SERVICE_KEY</td><td>Supabase service-role key</td><td><span class="badge badge-normal">Cloud only</span></td></tr>
+        <tr><td class="mono">SUPABASE_DB_URL</td><td>Supabase PostgreSQL connection</td><td><span class="badge badge-normal">Cloud only</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">📋 Sample .env Content</div></div>
+  <div class="card-body">
+    <div class="code-block">
+FLASK_ENV=development
+FLASK_SECRET_KEY=your_64_char_hex_here
+ENCRYPTION_KEY_B64=your_base64_32_byte_key_here
+SEARCH_KEY_B64=your_base64_32_byte_key_here
+INTEGRITY_KEY_B64=your_base64_32_byte_key_here
+STORAGE_MODE=local
+# STORAGE_MODE=cloud  (uncomment and set Supabase vars below)
+# SUPABASE_URL=https://xxxx.supabase.co
+# SUPABASE_SERVICE_KEY=your_service_role_key
+# SUPABASE_DB_URL=postgresql://...
+    </div>
+  </div>
+</div>
+{% endblock %}

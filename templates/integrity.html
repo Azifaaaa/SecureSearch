@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Integrity Verification — SecureSearch Cloud{% endblock %}
+{% block page_title %}Integrity Verification{% endblock %}
+
+{% block content %}
+<div class="info-panel mb-24">
+  <h4>🛡️ Three Levels of Integrity Protection</h4>
+  <ul>
+    <li><strong>AES-GCM Authentication Tag</strong> — 128-bit tag automatically verified on every decryption. Any ciphertext modification causes immediate failure.</li>
+    <li><strong>SHA-256 Digest</strong> — Hash of ciphertext stored in DB. Detects accidental corruption. NOT tamper-proof alone (attacker could modify both object and hash).</li>
+    <li><strong>HMAC-SHA-256 Reference</strong> — Keyed MAC over (record_id + ciphertext). Cannot be forged without the integrity key. Provides strong tamper-evidence.</li>
+  </ul>
+</div>
+
+<div class="card mb-24">
+  <div class="card-header"><div class="card-title">✅ Verify a Record</div></div>
+  <div class="card-body">
+    <div class="form-group">
+      <label>Record ID</label>
+      <input type="text" id="verify-record-id" placeholder="Paste a record UUID here">
+    </div>
+    <div class="flex-row">
+      <button class="btn btn-primary" onclick="verifyRecord()">✅ Verify Integrity</button>
+      <button class="btn btn-ghost btn-sm" onclick="pickFirst()">Use First Record</button>
+    </div>
+    <div id="verify-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">📋 Integrity Log (all records)</div></div>
+  <div class="card-body" style="padding:0">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Record ID</th>
+            <th>SHA-256</th>
+            <th>HMAC</th>
+            <th>Overall</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="integrity-table">
+          <tr><td colspan="5" class="loading-state">Load records first</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="padding:12px 18px">
+      <button class="btn btn-ghost btn-sm" onclick="loadIntegrityAll()">▶ Run Integrity Check on All Records</button>
+      <span id="integrity-progress" style="font-size:12px;color:var(--text-muted);margin-left:8px"></span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let firstRecordId = null;
+
+async function verifyRecord() {
+  const rid = document.getElementById('verify-record-id').value.trim();
+  if (!rid) return showToast('Enter a record ID', 'error');
+  const div = document.getElementById('verify-result');
+  div.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+  try {
+    const r = await apiGet(`/api/records/${rid}/verify`);
+    const i = r.integrity;
+    div.innerHTML = `
+      <div class="alert ${i.overall ? 'alert-success' : 'alert-error'}">
+        ${i.overall ? '✅' : '❌'} ${i.detail}
+      </div>
+      <div class="code-block">SHA-256 match: ${i.sha256_match}\nHMAC match:   ${i.hmac_match}\nOverall:      ${i.overall}</div>
+    `;
+  } catch(e) {
+    div.innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+  }
+}
+
+async function pickFirst() {
+  const r = await apiGet('/api/records?per_page=1');
+  if (r.records && r.records.length) {
+    document.getElementById('verify-record-id').value = r.records[0].id;
+    firstRecordId = r.records[0].id;
+  }
+}
+
+async function loadIntegrityAll() {
+  const tbody = document.getElementById('integrity-table');
+  const prog  = document.getElementById('integrity-progress');
+  tbody.innerHTML = '<tr><td colspan="5" class="loading-state"><div class="spinner"></div></td></tr>';
+  try {
+    const recs = await apiGet('/api/records?per_page=50');
+    if (!recs.records.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No records found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = '';
+    let ok = 0, fail = 0;
+    for (const rec of recs.records) {
+      const v = await apiGet(`/api/records/${rec.id}/verify`);
+      const i = v.integrity;
+      ok   += i.overall ? 1 : 0;
+      fail += i.overall ? 0 : 1;
+      prog.textContent = `${ok} ok / ${fail} failed`;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="mono">${rec.id.substring(0,12)}…</td>
+        <td>${i.sha256_match ? '<span class="badge badge-ok">✓</span>' : '<span class="badge badge-error">✗</span>'}</td>
+        <td>${i.hmac_match   ? '<span class="badge badge-ok">✓</span>' : '<span class="badge badge-error">✗</span>'}</td>
+        <td>${i.overall      ? '<span class="badge badge-normal">PASS</span>' : '<span class="badge badge-critical">FAIL</span>'}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="document.getElementById('verify-record-id').value='${rec.id}';verifyRecord()">Detail</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" class="alert alert-error">${e.message}</td></tr>`;
+  }
+}
+</script>
+{% endblock %}

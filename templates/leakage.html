@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Leakage Analysis — SecureSearch Cloud{% endblock %}
+{% block page_title %}Security & Leakage Analysis{% endblock %}
+
+{% block content %}
+<div class="alert alert-warning mb-24">
+  ⚠ This page is an honest academic analysis of what information the searchable encryption scheme leaks. Understanding leakage is essential for a correct threat model.
+</div>
+
+<div class="card mb-24">
+  <div class="card-header"><div class="card-title">🛡️ Threat Model</div></div>
+  <div class="card-body">
+    <div class="grid-3">
+      <div class="info-panel">
+        <h4>Attacker Level 1 — Encrypted Storage Only</h4>
+        <p>Attacker obtains only the encrypted object files from storage.</p>
+        <ul>
+          <li>✅ Cannot read sensor values</li>
+          <li>✅ Cannot read device IDs</li>
+          <li>✅ Cannot read locations</li>
+          <li>⚠ Can observe object sizes and timestamps</li>
+          <li>⚠ Can count the number of records</li>
+        </ul>
+      </div>
+      <div class="info-panel">
+        <h4>Attacker Level 2 — Storage + Token Index</h4>
+        <p>Attacker obtains encrypted objects AND the database token index.</p>
+        <ul>
+          <li>✅ Cannot reverse HMAC tokens without search key</li>
+          <li>⚠ Can observe <em>equality patterns</em>: records with identical field values share tokens</li>
+          <li>⚠ Can count token frequencies</li>
+          <li>⚠ Can observe search patterns if queries are logged</li>
+          <li>⚠ Bucket tokens reveal approximate numeric ranges</li>
+        </ul>
+      </div>
+      <div class="info-panel">
+        <h4>Attacker Level 3 — Compromised Server</h4>
+        <p>Attacker gains access to the Flask application server or the .env file.</p>
+        <ul>
+          <li>❌ Can read encryption key → decrypts all records</li>
+          <li>❌ Can read search key → reverses token index</li>
+          <li>❌ Can intercept plaintext during ingestion and decryption</li>
+          <li>→ <strong>All data is exposed</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-24">
+  <div class="card-header"><div class="card-title">📊 Leakage Profile</div></div>
+  <div class="card-body">
+    <table>
+      <thead>
+        <tr><th>Leakage Type</th><th>Severity</th><th>Explanation</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Object size</td><td><span class="badge badge-warning">LOW</span></td><td>Encrypted sizes may reveal approximate record content length</td></tr>
+        <tr><td>Record count</td><td><span class="badge badge-warning">LOW</span></td><td>Number of objects in bucket reveals total records stored</td></tr>
+        <tr><td>Equality pattern</td><td><span class="badge badge-warning">MEDIUM</span></td><td>Records with same field value share the same HMAC token — frequency visible</td></tr>
+        <tr><td>Search pattern</td><td><span class="badge badge-warning">MEDIUM</span></td><td>Repeated searches for same value produce same query token — search frequency observable</td></tr>
+        <tr><td>Access pattern</td><td><span class="badge badge-warning">MEDIUM</span></td><td>Which records are retrieved after a query is observable</td></tr>
+        <tr><td>Bucket range leakage</td><td><span class="badge badge-warning">MEDIUM</span></td><td>Bucket token reveals value is in a 1-unit range (e.g., 30–31°C)</td></tr>
+        <tr><td>Timestamp</td><td><span class="badge badge-warning">LOW</span></td><td>Record creation time stored in DB (not encrypted)</td></tr>
+        <tr><td>Device ID in record table</td><td><span class="badge badge-warning">LOW</span></td><td>Non-sensitive device ID stored plaintext for filtering performance</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">🎓 Academic Contribution</div></div>
+  <div class="card-body">
+    <div class="info-panel">
+      <h4>What this project demonstrates</h4>
+      <p>This project implements a <strong>Searchable Symmetric Encryption (SSE)</strong> scheme with controlled, documented leakage — not zero-leakage privacy. This is consistent with the academic literature on SSE schemes (SSE-1, SSE-2, etc.).</p>
+      <ul>
+        <li>An honest IoT cloud storage system cannot guarantee zero leakage to the storage provider</li>
+        <li>The scheme protects sensor data from passive adversaries who obtain only the encrypted storage</li>
+        <li>The HMAC index leaks equality patterns — a known and accepted trade-off for search functionality</li>
+        <li>Numeric bucket indexing leaks approximate value ranges — a known trade-off for range search capability</li>
+        <li>Perfect privacy would require ORAM (Oblivious RAM) schemes, which have high performance cost</li>
+        <li>This system represents a practical balance between privacy and usability for an academic demo</li>
+      </ul>
+    </div>
+    <div class="alert alert-info" style="margin-top:12px">
+      ℹ️ For production use, consider: TLS-encrypted connections, server-side trusted execution environments, oblivious data access patterns, and proper secret management with HSMs.
+    </div>
+  </div>
+</div>
+{% endblock %}

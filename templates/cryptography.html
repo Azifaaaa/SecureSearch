@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Cryptography Details — SecureSearch Cloud{% endblock %}
+{% block page_title %}Cryptographic Implementation Details{% endblock %}
+
+{% block content %}
+<div class="grid-2 mb-24">
+  <div class="card">
+    <div class="card-header"><div class="card-title">🔐 AES-256-GCM Encryption</div></div>
+    <div class="card-body">
+      <div class="info-panel">
+        <h4>What is AES-256-GCM?</h4>
+        <p>AES-GCM (Galois/Counter Mode) is an authenticated encryption scheme that provides both <strong>confidentiality</strong> and <strong>data authenticity</strong> in a single operation.</p>
+      </div>
+      <table style="margin-top:12px">
+        <tbody>
+          <tr><td style="color:var(--text-muted);width:140px">Algorithm</td><td>AES-256-GCM</td></tr>
+          <tr><td style="color:var(--text-muted)">Key size</td><td>256 bits (32 bytes)</td></tr>
+          <tr><td style="color:var(--text-muted)">Nonce size</td><td>96 bits (12 bytes), random per encryption</td></tr>
+          <tr><td style="color:var(--text-muted)">Auth tag</td><td>128 bits (16 bytes), appended to ciphertext</td></tr>
+          <tr><td style="color:var(--text-muted)">AAD</td><td>record_id + encryption version (binds ciphertext to record)</td></tr>
+          <tr><td style="color:var(--text-muted)">Library</td><td>Python <code>cryptography</code> (pyca)</td></tr>
+        </tbody>
+      </table>
+      <div class="code-block" style="margin-top:12px">
+# Encryption (from backend/crypto_engine.py)
+aesgcm = AESGCM(encryption_key)   # 256-bit key
+nonce  = os.urandom(12)            # fresh 96-bit nonce
+aad    = f"securesearch:v1:record:{record_id}".encode()
+ciphertext = aesgcm.encrypt(nonce, plaintext, aad)
+# ciphertext includes 16-byte GCM authentication tag</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">🔑 HMAC-SHA-256 Search Tokens</div></div>
+    <div class="card-body">
+      <div class="info-panel">
+        <h4>What is Searchable Encryption?</h4>
+        <p>HMAC tokens allow searching encrypted data without decrypting it. A keyed hash of each field value is stored instead of the plaintext. At query time, the same token is recomputed and matched.</p>
+      </div>
+      <table style="margin-top:12px">
+        <tbody>
+          <tr><td style="color:var(--text-muted);width:140px">Algorithm</td><td>HMAC-SHA-256</td></tr>
+          <tr><td style="color:var(--text-muted)">Key</td><td>Separate 256-bit SEARCH_KEY</td></tr>
+          <tr><td style="color:var(--text-muted)">Output</td><td>64-character hex string</td></tr>
+          <tr><td style="color:var(--text-muted)">Domain sep.</td><td>field prefix prevents cross-field collisions</td></tr>
+          <tr><td style="color:var(--text-muted)">Normalisation</td><td>lowercase, strip, replace spaces with _</td></tr>
+        </tbody>
+      </table>
+      <div class="code-block" style="margin-top:12px">
+# Token generation (from backend/searchable_index.py)
+message = f"location:laboratory_a".encode()
+token   = hmac.new(search_key, message, sha256).hexdigest()
+# → 64-char hex, stored in DB (never the plaintext value)</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2 mb-24">
+  <div class="card">
+    <div class="card-header"><div class="card-title">🪣 Numeric Bucket Indexing</div></div>
+    <div class="card-body">
+      <div class="info-panel">
+        <h4>Why buckets?</h4>
+        <p>HMAC tokens are deterministic equality checks. For range queries (e.g. temperature &gt; 30°C), the value space is divided into 1-unit buckets. Each bucket gets its own token. Range queries enumerate all relevant bucket tokens.</p>
+      </div>
+      <table style="margin-top:12px">
+        <tbody>
+          <tr><td style="color:var(--text-muted);width:160px">Temperature range</td><td>-20°C to 80°C</td></tr>
+          <tr><td style="color:var(--text-muted)">Temperature bucket</td><td>1°C width</td></tr>
+          <tr><td style="color:var(--text-muted)">Humidity range</td><td>0% to 100%</td></tr>
+          <tr><td style="color:var(--text-muted)">Humidity bucket</td><td>1% width</td></tr>
+          <tr><td style="color:var(--text-muted)">Post-decrypt check</td><td>Exact comparison always applied</td></tr>
+        </tbody>
+      </table>
+      <div class="code-block" style="margin-top:12px">
+# Example: 30.7°C → bucket 30
+# Query: temperature > 30°C
+# Buckets enumerated: 31, 32, 33, … 80
+# Candidates fetched and decrypted
+# Exact check: value > 30.0 (not ≥ 30)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">🔑 Key Management</div></div>
+    <div class="card-body">
+      <div class="info-panel">
+        <h4>Three separate keys</h4>
+        <ul>
+          <li><strong>ENCRYPTION_KEY</strong> — AES-256-GCM encryption/decryption only</li>
+          <li><strong>SEARCH_KEY</strong> — HMAC token generation only</li>
+          <li><strong>INTEGRITY_KEY</strong> — HMAC integrity verification only</li>
+        </ul>
+        <p style="margin-top:8px">Keys are <strong>never stored in the database</strong>, never sent to the browser, and must never be committed to Git.</p>
+      </div>
+      <div class="code-block" style="margin-top:12px">
+# Generate keys (run once):
+python scripts/generate_keys.py
+
+# Keys stored in .env file only:
+ENCRYPTION_KEY_B64=base64(32_random_bytes)
+SEARCH_KEY_B64=base64(32_random_bytes)
+INTEGRITY_KEY_B64=base64(32_random_bytes)
+</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

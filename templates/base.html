@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}SecureSearch Cloud{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🔐</div>
+      <div class="logo-text">
+        SecureSearch
+        <span class="logo-sub">Cloud Platform</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Overview</div>
+      <a href="/dashboard"    class="nav-item" data-page="dashboard">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      <a href="/monitoring"   class="nav-item" data-page="monitoring">
+        <span class="nav-icon">📡</span> Sensor Monitor
+      </a>
+      <a href="/dataset"      class="nav-item" data-page="dataset">
+        <span class="nav-icon">📋</span> Dataset Explorer
+      </a>
+
+      <div class="nav-section-title">Encryption</div>
+      <a href="/records"      class="nav-item" data-page="records">
+        <span class="nav-icon">🗄️</span> Encrypted Records
+      </a>
+      <a href="/cryptography" class="nav-item" data-page="cryptography">
+        <span class="nav-icon">🔑</span> Crypto Details
+      </a>
+      <a href="/integrity"    class="nav-item" data-page="integrity">
+        <span class="nav-icon">✅</span> Integrity Check
+      </a>
+
+      <div class="nav-section-title">Search</div>
+      <a href="/search"       class="nav-item" data-page="search">
+        <span class="nav-icon">🔍</span> Search Records
+      </a>
+      <a href="/history"      class="nav-item" data-page="history">
+        <span class="nav-icon">📜</span> Search History
+      </a>
+
+      <div class="nav-section-title">System</div>
+      <a href="/cloud-status" class="nav-item" data-page="cloud-status">
+        <span class="nav-icon">☁️</span> Cloud Status
+      </a>
+      <a href="/leakage"      class="nav-item" data-page="leakage">
+        <span class="nav-icon">🛡️</span> Leakage Analysis
+      </a>
+      <a href="/settings"     class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span> Settings
+      </a>
+      <a href="/about"        class="nav-item" data-page="about">
+        <span class="nav-icon">ℹ️</span> About
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div>Storage mode:</div>
+      <div id="sidebar-storage-badge" class="storage-badge local">LOCAL</div>
+      <div style="margin-top:6px;font-size:10px;color:var(--text-muted)">
+        All data: Synthetic/Simulated
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main area -->
+  <div class="main-content">
+    <header class="top-bar">
+      <div class="top-bar-title">{% block page_title %}SecureSearch Cloud{% endblock %}</div>
+      <div class="top-bar-right">
+        <span id="topbar-storage" class="badge badge-local" style="font-size:10px">LOCAL</span>
+        <div class="user-badge">
+          <span>👤</span>
+          <span id="topbar-username">...</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

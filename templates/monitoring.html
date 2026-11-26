@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Sensor Monitor — SecureSearch Cloud{% endblock %}
+{% block page_title %}Sensor Monitoring{% endblock %}
+
+{% block content %}
+<div class="info-panel mb-24">
+  <h4>⚠ Simulated Sensor Data</h4>
+  <p>All readings shown here are <strong>synthetic/simulated</strong>. No physical IoT hardware, Arduino, ESP32, or Raspberry Pi is used. The simulator generates realistic temperature and humidity patterns with normal distribution noise and occasional anomalies.</p>
+</div>
+
+<!-- Simulator controls -->
+<div class="card mb-24">
+  <div class="card-header">
+    <div class="card-title">📡 Simulator Controls</div>
+    <div id="sim-status-badge" class="badge badge-local">IDLE</div>
+  </div>
+  <div class="card-body">
+    <div class="flex-row" style="flex-wrap:wrap;gap:12px;margin-bottom:16px">
+      <div class="form-group" style="margin:0;min-width:150px">
+        <label>Device</label>
+        <select id="sim-device">
+          <option value="">Random device</option>
+          <option value="SENSOR_001">SENSOR_001 — Laboratory A</option>
+          <option value="SENSOR_002">SENSOR_002 — Server Room</option>
+          <option value="SENSOR_003">SENSOR_003 — Library</option>
+          <option value="SENSOR_004">SENSOR_004 — Classroom</option>
+          <option value="SENSOR_005">SENSOR_005 — Laboratory B</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;min-width:120px">
+        <label>Interval (seconds)</label>
+        <input type="number" id="sim-interval" value="5" min="1" max="60">
+      </div>
+    </div>
+    <div class="flex-row" style="flex-wrap:wrap">
+      <button class="btn btn-success" id="btn-start" onclick="startSimulator()">▶ Start Simulator</button>
+      <button class="btn btn-danger"  id="btn-stop"  onclick="stopSimulator()" disabled>⏹ Stop Simulator</button>
+      <button class="btn btn-primary" onclick="generateOne()">⚡ Generate Single Reading</button>
+    </div>
+    <div id="sim-info" style="margin-top:12px;font-size:12px;color:var(--text-muted)">
+      Simulator idle. Click "Start Simulator" to begin generating readings.
+    </div>
+  </div>
+</div>
+
+<!-- Recent readings -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">📊 Recent Readings</div>
+    <button class="btn btn-ghost btn-sm" onclick="refreshReadings()">↻ Refresh</button>
+  </div>
+  <div class="card-body" style="padding:0">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Record ID</th>
+            <th>Device</th>
+            <th>Location</th>
+            <th>Temp (°C)</th>
+            <th>Humidity (%)</th>
+            <th>Status</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="readings-table">
+          <tr><td colspan="7" class="loading-state"><div class="spinner"></div> Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/simulator.js') }}"></script>
+{% endblock %}

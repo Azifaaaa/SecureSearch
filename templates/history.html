@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Search History — SecureSearch Cloud{% endblock %}
+{% block page_title %}Search History{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">📜 Your Search History</div>
+    <button class="btn btn-ghost btn-sm" onclick="loadHistory()">↻ Refresh</button>
+  </div>
+  <div class="card-body" style="padding:0">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Candidates</th>
+            <th>Results</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="history-table">
+          <tr><td colspan="6" class="loading-state"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function loadHistory() {
+  const tbody = document.getElementById('history-table');
+  tbody.innerHTML = '<tr><td colspan="6" class="loading-state"><div class="spinner"></div></td></tr>';
+  try {
+    const r = await apiGet('/api/search/history?limit=100');
+    if (!r.history.length) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">🔍</div><h3>No search history yet</h3><p>Run a search from the Search page.</p></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = r.history.map((h,i) => `
+      <tr>
+        <td style="color:var(--text-muted)">${i+1}</td>
+        <td><span class="badge ${h.search_type==='exact'?'badge-cloud':h.search_type==='range'?'badge-warning':'badge-normal'}">${h.search_type}</span></td>
+        <td class="mono" style="max-width:250px;overflow:hidden;text-overflow:ellipsis">${h.search_description || '—'}</td>
+        <td>${h.candidate_count}</td>
+        <td style="color:var(--accent-green)">${h.result_count}</td>
+        <td style="color:var(--text-muted)">${new Date(h.search_timestamp).toLocaleString()}</td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="alert alert-error">${e.message}</div></td></tr>`;
+  }
+}
+document.addEventListener('DOMContentLoaded', loadHistory);
+</script>
+{% endblock %}

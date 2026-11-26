@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}About — SecureSearch Cloud{% endblock %}
+{% block page_title %}About This Project{% endblock %}
+
+{% block content %}
+<div class="card mb-24">
+  <div class="card-header"><div class="card-title">🔐 SecureSearch Cloud</div></div>
+  <div class="card-body">
+    <div class="info-panel">
+      <h4>Project Abstract</h4>
+      <p>SecureSearch Cloud is an academic project demonstrating <strong>privacy-preserving searchable encryption for IoT sensor data in cloud storage</strong>. It was developed as part of an M.Sc. Cybersecurity programme.</p>
+      <p style="margin-top:8px">The system simulates five virtual IoT sensor devices, encrypts every reading with AES-256-GCM before cloud upload, and allows authorized users to search the encrypted dataset using keyed HMAC-SHA-256 search tokens — without decrypting the entire database.</p>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2 mb-24">
+  <div class="card">
+    <div class="card-header"><div class="card-title">🎯 Key Features</div></div>
+    <div class="card-body">
+      <ul class="workflow-steps">
+        <li>AES-256-GCM authenticated encryption of all sensor records</li>
+        <li>HMAC-SHA-256 searchable encryption index (no plaintext in DB)</li>
+        <li>Numeric bucket indexing for range queries</li>
+        <li>Two-phase search: token lookup + post-decryption exact verification</li>
+        <li>Supabase cloud storage + PostgreSQL integration</li>
+        <li>Local mode (SQLite + filesystem) for development</li>
+        <li>5,000-record synthetic dataset with 5 virtual devices</li>
+        <li>Integrity verification (SHA-256 + HMAC)</li>
+        <li>Real-time sensor simulation dashboard</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">📚 Technology Stack</div></div>
+    <div class="card-body">
+      <table>
+        <tbody>
+          <tr><td style="color:var(--text-muted)">Backend</td><td>Python 3, Flask, SQLAlchemy</td></tr>
+          <tr><td style="color:var(--text-muted)">Crypto</td><td>Python cryptography (pyca)</td></tr>
+          <tr><td style="color:var(--text-muted)">Frontend</td><td>HTML5, CSS3, Vanilla JS, Chart.js</td></tr>
+          <tr><td style="color:var(--text-muted)">Cloud DB</td><td>Supabase PostgreSQL</td></tr>
+          <tr><td style="color:var(--text-muted)">Cloud Storage</td><td>Supabase Storage (private bucket)</td></tr>
+          <tr><td style="color:var(--text-muted)">Local DB</td><td>SQLite (via SQLAlchemy)</td></tr>
+          <tr><td style="color:var(--text-muted)">Encryption</td><td>AES-256-GCM (NIST SP 800-38D)</td></tr>
+          <tr><td style="color:var(--text-muted)">Search</td><td>HMAC-SHA-256 (RFC 2104)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">🎓 For Your Professor</div></div>
+  <div class="card-body">
+    <div class="info-panel">
+      <h4>Simple explanation of the academic contribution</h4>
+      <p>Traditional cloud storage stores data in plaintext or with simple encryption that prevents any searching. This project solves the "search over encrypted data" problem using a technique called <strong>Searchable Symmetric Encryption (SSE)</strong>.</p>
+      <p style="margin-top:8px">Every IoT sensor reading is encrypted with AES-256-GCM before it leaves the application. For each field that needs to be searchable (device ID, location, status), we compute an HMAC-SHA-256 "token" using a secret key. These tokens are stored in a database index. When a user searches, we compute the same token for the query value and look it up — without ever storing or searching plaintext sensor values.</p>
+      <p style="margin-top:8px">For numeric range queries (temperature &gt; 30°C), we use a bucketing scheme: the value space is divided into 1-degree buckets, each with its own token. We enumerate the relevant bucket tokens, find candidate records, decrypt them, and apply an exact numeric comparison. This prevents false positives from bucket boundary effects.</p>
+      <p style="margin-top:8px">The system is honest about its limitations: an observer of the token index can see that some records share the same token (equality-pattern leakage), and bucket tokens reveal approximate value ranges. This is consistent with the academic SSE literature and is clearly documented in the Leakage Analysis page.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

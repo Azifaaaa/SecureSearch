@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Search — SecureSearch Cloud{% endblock %}
+{% block page_title %}Searchable Encryption{% endblock %}
+
+{% block content %}
+<!-- Tab navigation -->
+<div class="flex-row mb-24" style="border-bottom:1px solid var(--border);padding-bottom:0">
+  <button class="btn btn-ghost" id="tab-exact"    onclick="showTab('exact')"   style="border-bottom:2px solid var(--accent-cyan);border-radius:0">Exact Search</button>
+  <button class="btn btn-ghost" id="tab-range"    onclick="showTab('range')"   style="border-radius:0">Range Search</button>
+  <button class="btn btn-ghost" id="tab-combined" onclick="showTab('combined')" style="border-radius:0">Combined Search</button>
+</div>
+
+<!-- Exact search -->
+<div id="panel-exact">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div class="card-title">🔍 Exact Match Search</div></div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>Field</label>
+          <select id="exact-field">
+            <option value="device_id">Device ID</option>
+            <option value="device_name">Device Name</option>
+            <option value="location">Location</option>
+            <option value="sensor_type">Sensor Type</option>
+            <option value="status">Status</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Value</label>
+          <input type="text" id="exact-value" placeholder="e.g. Laboratory A, WARNING, SENSOR_001">
+        </div>
+        <button class="btn btn-primary" onclick="runExactSearch()">🔍 Search</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">🔄 Search Workflow</div></div>
+      <div class="card-body">
+        <ol class="workflow-steps" id="exact-workflow">
+          <li>Enter a field and value to search for</li>
+          <li>Backend generates HMAC token for the query</li>
+          <li>Token compared against stored index (no plaintext in DB)</li>
+          <li>Matching record IDs retrieved</li>
+          <li>Ciphertexts fetched from storage</li>
+          <li>Records decrypted and returned</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div id="exact-results" class="mt-16"></div>
+</div>
+
+<!-- Range search -->
+<div id="panel-range" style="display:none">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div class="card-title">📊 Numeric Range Search</div></div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>Sensor</label>
+          <select id="range-sensor">
+            <option value="temperature">Temperature (°C)</option>
+            <option value="humidity">Humidity (%)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Operator</label>
+          <select id="range-op" onchange="toggleValue2()">
+            <option value="gt">Greater than (&gt;)</option>
+            <option value="gte">Greater than or equal (&ge;)</option>
+            <option value="lt">Less than (&lt;)</option>
+            <option value="lte">Less than or equal (&le;)</option>
+            <option value="between">Between</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Value</label>
+          <input type="number" id="range-value" step="0.1" placeholder="e.g. 30.0">
+        </div>
+        <div class="form-group" id="value2-group" style="display:none">
+          <label>Value 2 (upper bound for Between)</label>
+          <input type="number" id="range-value2" step="0.1" placeholder="e.g. 40.0">
+        </div>
+        <button class="btn btn-primary" onclick="runRangeSearch()">📊 Search</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">🪣 Bucket Index Workflow</div></div>
+      <div class="card-body">
+        <ol class="workflow-steps" id="range-workflow">
+          <li>Enter numeric condition (e.g. temperature &gt; 30°C)</li>
+          <li>Backend determines affected 1°C buckets</li>
+          <li>HMAC tokens generated for each bucket</li>
+          <li>Candidate record IDs retrieved via bucket token index</li>
+          <li>Each candidate fetched and decrypted</li>
+          <li>Exact numeric comparison performed post-decryption</li>
+          <li>Only truly matching records returned</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div id="range-results" class="mt-16"></div>
+</div>
+
+<!-- Combined search -->
+<div id="panel-combined" style="display:none">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div class="card-title">🔗 Combined Search</div></div>
+      <div class="card-body">
+        <h4 style="font-size:12px;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase">Exact Filter</h4>
+        <div class="form-group">
+          <label>Field</label>
+          <select id="comb-field">
+            <option value="">No exact filter</option>
+            <option value="device_id">Device ID</option>
+            <option value="device_name">Device Name</option>
+            <option value="location">Location</option>
+            <option value="status">Status</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Value</label>
+          <input type="text" id="comb-value" placeholder="e.g. Laboratory A">
+        </div>
+        <h4 style="font-size:12px;color:var(--text-muted);margin:12px 0;text-transform:uppercase">Range Filter</h4>
+        <div class="form-group">
+          <label>Sensor</label>
+          <select id="comb-sensor">
+            <option value="">No range filter</option>
+            <option value="temperature">Temperature (°C)</option>
+            <option value="humidity">Humidity (%)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Operator</label>
+          <select id="comb-op">
+            <option value="gt">&gt;</option>
+            <option value="gte">&ge;</option>
+            <option value="lt">&lt;</option>
+            <option value="lte">&le;</option>
+            <option value="between">Between</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Value</label>
+          <input type="number" id="comb-rvalue" step="0.1" placeholder="e.g. 30.0">
+        </div>
+        <button class="btn btn-primary" onclick="runCombinedSearch()">🔗 Combined Search</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">ℹ️ Combined Search Logic</div></div>
+      <div class="card-body">
+        <div class="info-panel">
+          <h4>How it works</h4>
+          <ul>
+            <li>Both filters are applied at the token-index level first</li>
+            <li>The result sets are intersected (AND logic)</li>
+            <li>Only candidate records in both sets are decrypted</li>
+            <li>Exact numeric verification applied after decryption</li>
+            <li>Far fewer records decrypted vs. full scan</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="combined-results" class="mt-16"></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — SecureSearch Cloud{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="metrics-grid" id="metrics-grid">
+  <div class="metric-card cyan">
+    <div class="metric-label">Encrypted Records</div>
+    <div class="metric-value" id="m-total">—</div>
+    <div class="metric-sub">Total stored</div>
+  </div>
+  <div class="metric-card green">
+    <div class="metric-label">Recent (24h)</div>
+    <div class="metric-value" id="m-recent">—</div>
+    <div class="metric-sub">New records</div>
+  </div>
+  <div class="metric-card blue">
+    <div class="metric-label">Search Ops</div>
+    <div class="metric-value" id="m-searches">—</div>
+    <div class="metric-sub">Total queries</div>
+  </div>
+  <div class="metric-card purple">
+    <div class="metric-label">Cloud Uploads</div>
+    <div class="metric-value" id="m-cloud">—</div>
+    <div class="metric-sub">Supabase objects</div>
+  </div>
+  <div class="metric-card yellow">
+    <div class="metric-label">Simulator</div>
+    <div class="metric-value" id="m-sim-count">—</div>
+    <div class="metric-sub" id="m-sim-status">Idle</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Users</div>
+    <div class="metric-value" id="m-users">—</div>
+    <div class="metric-sub">Registered</div>
+  </div>
+</div>
+
+<div class="grid-2 mb-24">
+  <!-- Temperature trend -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🌡️ Temperature Trend (last 50 records)</div>
+    </div>
+    <div class="card-body">
+      <div class="chart-container">
+        <canvas id="chart-temp"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Humidity trend -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">💧 Humidity Trend (last 50 records)</div>
+    </div>
+    <div class="card-body">
+      <div class="chart-container">
+        <canvas id="chart-humid"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2 mb-24">
+  <!-- Status distribution -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📊 Status Distribution</div>
+    </div>
+    <div class="card-body">
+      <div class="chart-container" style="height:180px">
+        <canvas id="chart-status"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Readings per device -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📡 Readings by Device</div>
+    </div>
+    <div class="card-body">
+      <div class="chart-container" style="height:180px">
+        <canvas id="chart-devices"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🔒 System Status</div>
+    <span id="storage-mode-badge" class="badge badge-local">LOCAL</span>
+  </div>
+  <div class="card-body">
+    <div id="system-status-items" style="display:flex;gap:24px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Storage</div>
+        <div id="sys-storage" style="font-size:13px;color:var(--text-secondary)">...</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Encryption</div>
+        <div style="font-size:13px;color:var(--accent-green)">AES-256-GCM ✓</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Search Index</div>
+        <div style="font-size:13px;color:var(--accent-green)">HMAC-SHA-256 ✓</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Data Type</div>
+        <div style="font-size:13px;color:var(--accent-yellow)">Synthetic/Simulated ⚠</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Cloud Status — SecureSearch Cloud{% endblock %}
+{% block page_title %}Cloud Storage Status{% endblock %}
+
+{% block content %}
+<div class="card mb-24">
+  <div class="card-header">
+    <div class="card-title">☁️ Storage Backend Status</div>
+    <button class="btn btn-primary btn-sm" onclick="checkStatus()">↻ Refresh</button>
+  </div>
+  <div class="card-body">
+    <div id="cloud-status-content">
+      <div class="loading-state"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-24">
+  <div class="card-header"><div class="card-title">🔌 Test Connection</div></div>
+  <div class="card-body">
+    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px">
+      Click to actively test connectivity to the configured storage backend.
+    </p>
+    <button class="btn btn-primary" onclick="testConnection()">🔌 Test Connection</button>
+    <div id="test-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">📋 Storage Mode Guide</div></div>
+  <div class="card-body">
+    <div class="grid-2">
+      <div class="info-panel">
+        <h4>LOCAL Mode</h4>
+        <ul>
+          <li>No cloud credentials required</li>
+          <li>Encrypted objects stored in <code>storage/encrypted_objects/</code></li>
+          <li>SQLite database (<code>securesearch_local.db</code>)</li>
+          <li>Perfect for development and testing</li>
+          <li>Set <code>STORAGE_MODE=local</code> in .env</li>
+        </ul>
+      </div>
+      <div class="info-panel">
+        <h4>CLOUD Mode (Supabase)</h4>
+        <ul>
+          <li>Requires Supabase project credentials</li>
+          <li>Encrypted objects in private Storage bucket</li>
+          <li>PostgreSQL database in Supabase</li>
+          <li>Service-role key NEVER sent to browser</li>
+          <li>Set <code>STORAGE_MODE=cloud</code> and configure <code>SUPABASE_URL</code>, <code>SUPABASE_SERVICE_KEY</code>, <code>SUPABASE_DB_URL</code></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function checkStatus() {
+  const div = document.getElementById('cloud-status-content');
+  div.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+  try {
+    const r = await apiGet('/api/cloud/status');
+    const isOk = r.status === 'ok';
+    div.innerHTML = `
+      <div class="alert ${isOk ? 'alert-success' : 'alert-error'}" style="margin-bottom:16px">
+        ${isOk ? '✅' : '❌'} ${r.note}
+      </div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
+        <div>
+          <div class="metric-label">Mode</div>
+          <span class="badge ${r.mode === 'local' ? 'badge-local' : 'badge-cloud'}" style="font-size:13px">${r.mode.toUpperCase()}</span>
+        </div>
+        <div>
+          <div class="metric-label">Status</div>
+          <span class="badge ${isOk ? 'badge-ok' : 'badge-error'}">${r.status}</span>
+        </div>
+      </div>
+      <div class="code-block" style="margin-top:16px">${JSON.stringify(r.detail, null, 2)}</div>
+    `;
+  } catch(e) {
+    div.innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+  }
+}
+
+async function testConnection() {
+  const div = document.getElementById('test-result');
+  div.innerHTML = '<div class="spinner"></div> Testing...';
+  try {
+    const r = await apiPost('/api/cloud/test-connection', {});
+    const isOk = r.status === 'ok';
+    div.innerHTML = `<div class="alert ${isOk ? 'alert-success' : 'alert-error'}">${isOk ? '✅ Connection successful' : '❌ ' + (r.detail || 'Connection failed')}</div>`;
+  } catch(e) {
+    div.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', checkStatus);
+</script>
+{% endblock %}

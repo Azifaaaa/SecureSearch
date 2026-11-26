@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Encrypted Records — SecureSearch Cloud{% endblock %}
+{% block page_title %}Encrypted Cloud Records{% endblock %}
+
+{% block content %}
+<div class="info-panel mb-24">
+  <h4>🔒 Encrypted Storage</h4>
+  <p>Every sensor reading is encrypted with <strong>AES-256-GCM</strong> before storage. The table below shows only metadata — the actual sensor values (temperature, humidity, location) are stored encrypted and are never visible in this table. Click "Inspect" to fetch and decrypt an individual record (requires authentication).</p>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🗄️ Encrypted Record Metadata</div>
+    <div class="flex-row">
+      <span id="records-count" style="font-size:12px;color:var(--text-muted)">Loading...</span>
+      <button class="btn btn-ghost btn-sm" onclick="loadRecords(currentPage)">↻ Refresh</button>
+    </div>
+  </div>
+  <div class="card-body" style="padding:0">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Record ID (truncated)</th>
+            <th>Device ID</th>
+            <th>Encryption</th>
+            <th>Version</th>
+            <th>Storage</th>
+            <th>Created At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="records-table">
+          <tr><td colspan="7" class="loading-state"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="records-pagination"></div>
+  </div>
+</div>
+
+<!-- Inspect modal -->
+<div id="inspect-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;position:relative">
+    <button onclick="closeInspect()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer">✕</button>
+    <h3 style="color:var(--accent-cyan);margin-bottom:16px">Record Inspector</h3>
+    <div id="inspect-content">Loading...</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/records.js') }}"></script>
+{% endblock %}
